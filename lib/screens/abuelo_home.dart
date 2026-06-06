@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'abuelo_perfil.dart';
 
 class AbueloHome extends StatelessWidget {
   const AbueloHome({super.key});
@@ -86,7 +87,14 @@ class AbueloHome extends StatelessWidget {
                               backgroundColor: const Color(0xFF1E88E5), // Azul
                               textColor: Colors.white,
                               iconPath: 'assets/images/buttons/perfil.png',
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const AbueloPerfil(),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                           const SizedBox(width: 16),

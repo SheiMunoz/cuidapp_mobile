@@ -12,7 +12,7 @@ class AbueloHome extends StatelessWidget {
         43,
         140,
         236,
-      ), // Un fondo claro y suave
+      ), 
       body: SafeArea(
         child: Padding(
           // Márgenes laterales para que los botones no toquen los bordes

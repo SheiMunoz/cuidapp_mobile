@@ -1,3 +1,4 @@
+import 'package:cuidapp_mobile/widgets/cuidapp_bar.dart';
 import 'package:flutter/material.dart';
 
 class AbueloPerfil extends StatefulWidget {
@@ -19,19 +20,8 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 43, 140, 236),
 
-      // Barra superior con el título
-      appBar: AppBar(
-        // 3. Cambiamos fontweight a fontWeight (con W mayúscula)
-        title: const Text(
-          'Perfil',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: const Color.fromARGB(255, 43, 140, 236),
-        foregroundColor: Colors.white,
-        centerTitle: true,
-      ),
-
-      // Cuerpo de la pantalla con los botones
+      // Barra personalizada
+      appBar: const CuidAppBar(titulo: 'Perfil'),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24.0),

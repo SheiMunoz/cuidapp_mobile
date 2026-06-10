@@ -1,5 +1,5 @@
-import 'package:cuidapp_mobile/widgets/cuidapp_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:cuidapp_mobile/widgets/cuidapp_bar.dart';
 
 class AbueloPerfil extends StatefulWidget {
   const AbueloPerfil({super.key});
@@ -11,8 +11,18 @@ class AbueloPerfil extends StatefulWidget {
 class _AbueloPerfilState extends State<AbueloPerfil> {
   String _tipoMedicion = "";
 
-  void _abrirCamarayEnviar() {
-    print('Simulando abrir la cámara para: $_tipoMedicion');
+  void _abrirCamarayEnviar() async {
+    final ImagePicker selector = ImagePicker();
+    final XFile? fotoMedicion = await selector.pickImage(
+      source: ImageSource.camera,
+    );
+
+    if (fotoMedicion != null) {
+      print('¡Foto de $_tipoMedicion tomada!');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Foto de $_tipoMedicion enviada con éxito')),
+      );
+    }
   }
 
   @override
@@ -20,8 +30,19 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 43, 140, 236),
 
-      // Barra personalizada
-      appBar: const CuidAppBar(titulo: 'Perfil'),
+      // Barra superior con el título
+      appBar: AppBar(
+        // 3. Cambiamos fontweight a fontWeight (con W mayúscula)
+        title: const Text(
+          'Perfil',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: const Color.fromARGB(255, 43, 140, 236),
+        foregroundColor: Colors.white,
+        centerTitle: true,
+      ),
+
+      // Cuerpo de la pantalla con los botones
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24.0),

@@ -7,12 +7,7 @@ class AbueloHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(
-        255,
-        43,
-        140,
-        236,
-      ), 
+      backgroundColor: const Color.fromARGB(255, 43, 140, 236),
       body: SafeArea(
         child: Padding(
           // Márgenes laterales para que los botones no toquen los bordes
@@ -117,12 +112,12 @@ class AbueloHome extends StatelessWidget {
                         children: [
                           Expanded(
                             child: _buildMenuButton(
-                              text: 'Próximo turno',
+                              text: 'Medicamentos',
                               backgroundColor: const Color(
                                 0xFFFFB300,
                               ), // Amarillo/Naranja
                               textColor: Colors.black87,
-                              iconPath: 'assets/images/buttons/calendario.png',
+                              iconPath: 'assets/images/buttons/medicamento.png',
                               onPressed: () {},
                             ),
                           ),
@@ -170,7 +165,6 @@ class AbueloHome extends StatelessWidget {
     );
   }
 
-  // Función constructora para mantener el código limpio y los botones idénticos
   Widget _buildMenuButton({
     required String text,
     required Color backgroundColor,

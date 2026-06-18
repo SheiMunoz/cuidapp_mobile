@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:cuidapp_mobile/widgets/cuidapp_bar.dart';
 import 'package:cuidapp_mobile/services/api_service.dart';
+import 'abuelo_medicamento.dart';
 import 'login.dart';
 
 class AbueloPerfil extends StatefulWidget {
@@ -14,6 +15,27 @@ class AbueloPerfil extends StatefulWidget {
 
 class _AbueloPerfilState extends State<AbueloPerfil> {
   String _tipoMedicion = "";
+
+  // agregando datos de la API
+  bool _cargando = true;
+  Map<String, dynamic>? _perfil;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarDatosPerfil();
+  }
+
+  // ── Llamada a la API ───────────────────────────────────────────────
+  Future<void> _cargarDatosPerfil() async {
+    final me = await ApiService.getMe();
+    if (mounted) {
+      setState(() {
+        _perfil = me?['perfil'];
+        _cargando = false;
+      });
+    }
+  }
 
   // ── Cámara ─────────────────────────────────────────────────────────
   void _abrirCamarayEnviar() async {
@@ -82,65 +104,129 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Center(
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Color(0xFFE0E0E0),
-                  child: Icon(Icons.person, size: 60, color: Colors.grey),
+      body: _cargando
+          ? const Center(child: CircularProgressIndicator(color: Colors.white))
+          : _construirPerfil(),
+    );
+  }
+
+  Widget _construirPerfil() {
+    // Extraemos datos con valores por defecto por si vienen nulos
+    final obraSocial = _perfil?['obra_social']?.toString().isNotEmpty == true
+        ? _perfil!['obra_social']
+        : 'No registrada';
+    final numAfiliado =
+        _perfil?['numero_afiliado']?.toString().isNotEmpty == true
+        ? _perfil!['numero_afiliado']
+        : 'No registrado';
+    final grupoSanguineo =
+        _perfil?['grupo_sanguineo']?.toString().isNotEmpty == true
+        ? _perfil!['grupo_sanguineo']
+        : 'No registrado';
+
+    // Chequeamos qué mediciones requiere
+    final requierePresion = _perfil?['requiere_control_presion'] == true;
+    final requiereGlucosa = _perfil?['requiere_control_glucosa'] == true;
+    final requierePeso = _perfil?['requiere_control_peso'] == true;
+
+    // Armamos la lista dinámica de botones
+    List<Widget> botonesControl = [];
+    if (requierePresion)
+      botonesControl.add(
+        _buildControlBtn(
+          titulo: 'Presión',
+          icon: Icons.favorite,
+          color: Colors.red,
+        ),
+      );
+    if (requiereGlucosa)
+      botonesControl.add(
+        _buildControlBtn(
+          titulo: 'Glucosa',
+          icon: Icons.water_drop,
+          color: Colors.blue,
+        ),
+      );
+    if (requierePeso)
+      botonesControl.add(
+        _buildControlBtn(
+          titulo: 'Peso',
+          icon: Icons.monitor_weight,
+          color: Colors.orange,
+        ),
+      );
+
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Center(
+              child: CircleAvatar(
+                radius: 50,
+                backgroundColor: Color(0xFFE0E0E0),
+                child: Icon(Icons.person, size: 60, color: Colors.grey),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Obra Social: $obraSocial',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'N° Afiliado: $numAfiliado',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              // 👈 Nueva fila de Grupo Sanguíneo
+              'Grupo Sanguíneo: $grupoSanguineo',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E88E5),
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 68),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'Nombre: *Usuario*',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+              icon: const Icon(Icons.medication, size: 30),
+              label: const Text(
+                'Mis medicamentos',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              const Text(
-                'Obra Social: *Obra Social*',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const Text(
-                'Número de afiliado: *Número de afiliado*',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E88E5),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 68),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AbueloMedicamentos(),
                   ),
-                  elevation: 4,
-                ),
-                icon: const Icon(Icons.medication, size: 30),
-                label: const Text(
-                  'Mis medicamentos',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1,
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AbueloMedicamentos(),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 32),
+                );
+              },
+            ),
+            const SizedBox(height: 32),
+            if (botonesControl.isNotEmpty)
               Card(
                 elevation: 2,
                 shape: RoundedRectangleBorder(
@@ -160,30 +246,14 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildControlBtn(
-                            titulo: 'Presión',
-                            icon: Icons.favorite,
-                            color: Colors.red,
-                          ),
-                          _buildControlBtn(
-                            titulo: 'Glucosa',
-                            icon: Icons.water_drop,
-                            color: Colors.blue,
-                          ),
-                          _buildControlBtn(
-                            titulo: 'Peso',
-                            icon: Icons.monitor_weight,
-                            color: Colors.orange,
-                          ),
-                        ],
+                        children:
+                            botonesControl, // 👈 Solo dibuja los que necesita
                       ),
                     ],
                   ),
                 ),
               ),
-            ],
-          ),
+          ],
         ),
       ),
     );
@@ -213,19 +283,6 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
         const SizedBox(height: 8),
         Text(titulo, style: const TextStyle(fontWeight: FontWeight.bold)),
       ],
-    );
-  }
-}
-
-// PLACEHOLDER PARA LA LISTA DE MEDICAMENTOS
-class AbueloMedicamentos extends StatelessWidget {
-  const AbueloMedicamentos({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Mis medicamentos')),
-      body: const Center(child: Text('Para traer desde la API')),
     );
   }
 }

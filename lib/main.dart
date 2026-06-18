@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/login.dart';
 import 'screens/abuelo_home.dart';
+import 'screens/cuidador_home.dart';
 import 'services/api_service.dart';
 
 void main() {
@@ -45,10 +46,14 @@ class _AuthCheckState extends State<AuthCheck> {
       if (!mounted) return;
 
       if (me != null) {
-        // Token válido → va directo al home
+        // Token válido → va directo al home correspondiente
+        final rol = me['rol'];
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const AbueloHome()),
+          MaterialPageRoute(
+            builder: (_) =>
+                rol == 'cuidador' ? const CuidadorHome() : const AbueloHome(),
+          ),
         );
         return;
       }

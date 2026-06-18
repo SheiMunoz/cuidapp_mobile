@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'abuelo_home.dart';
+import 'cuidador_home.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -54,11 +55,10 @@ class _LoginScreenState extends State<LoginScreen> {
         context,
         MaterialPageRoute(builder: (_) => const AbueloHome()),
       );
-    } else {
-      // Por ahora también mandamos al home del abuelo hasta tener la pantalla del cuidador
+    } else if (rol == 'cuidador') {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const AbueloHome()),
+        MaterialPageRoute(builder: (_) => const CuidadorHome()),
       );
     }
   }

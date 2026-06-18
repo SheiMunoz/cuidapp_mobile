@@ -3,7 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // Emulador Android → 10.0.2.2  |  Teléfono físico → IP de la PC | Teléfono por USB localhost
+  // ATENCIÓN: Si vas a probar en el Motorola Edge físico,
+  // cambiá localhost por la IP de tu compu (ej: http://192.168.1.50:8000)
   static const String baseUrl = 'http://localhost:8000';
 
   // ── Guardar y leer tokens ──────────────────────────────────────────
@@ -62,4 +63,75 @@ class ApiService {
     }
     return null;
   }
-}
+
+  // ── Medicamentos ───────────────────────────────────────────────────
+
+  static Future<List<dynamic>?> getMedicamentos() async {
+    final token = await getAccessToken();
+    if (token == null) return null;
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/v1/medicamentos/'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    return null;
+  }
+
+  // ── Registrar Toma de Medicamento ──────────────────────────────────
+
+  static Future<Map<String, dynamic>> registrarToma(int medicamentoId) async {
+    final token = await getAccessToken();
+    if (token == null) return {'ok': false, 'error': 'No hay sesión activa'};
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/medicamentos/$medicamentoId/registrar-toma/'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      return {'ok': true};
+    } else {
+      final body = jsonDecode(response.body);
+      return {'ok': false, 'error': body['mensaje'] ?? 'Error desconocido'};
+    }
+  }
+
+  // ── Datos del dispositivo ──────────────────────────────────────────
+
+  static Future<bool> enviarDatoDispositivo(Map<String, dynamic> datos) async {
+    final token = await getAccessToken();
+    if (token == null) return false;
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/v1/dispositivo/'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(datos),
+    );
+    return response.statusCode == 201;
+  }
+  // ── Cuidadores: Abuelos a cargo ────────────────────────────────────
+
+  static Future<List<dynamic>?> getAbuelosACargo() async {
+    final token = await getAccessToken();
+    if (token == null) return null;
+
+    final response = await http.get(
+      Uri.parse(
+        '$baseUrl/api/v1/pacientes/',
+      ), // 👈 Acá conectamos con el nuevo path
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    return null;
+  }
+} // <-- ¡Esta es la llave maestra que envuelve todo!

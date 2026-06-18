@@ -1,10 +1,42 @@
 import 'package:flutter/material.dart';
 import 'abuelo_perfil.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'abuelo_medicamento.dart';
+import 'package:cuidapp_mobile/services/api_service.dart';
 
-class AbueloHome extends StatelessWidget {
+class AbueloHome extends StatefulWidget {
   const AbueloHome({super.key});
+
+  @override
+  State<AbueloHome> createState() => _AbueloHomeState();
+}
+
+class _AbueloHomeState extends State<AbueloHome> {
+  String _nombreAbuelo = "..."; // Texto temporal mientras carga
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarNombre();
+  }
+
+  Future<void> _cargarNombre() async {
+    final me = await ApiService.getMe();
+    if (mounted) {
+      setState(() {
+        if (me != null && me['perfil'] != null) {
+          // Buscamos el username (o el first_name si lo tuvieras en tu serializador)
+          // Asumimos que tu API devuelve 'username' dentro de los datos del user
+          final username =
+              me['perfil']['user']?['username'] ??
+              me['perfil']['username'] ??
+              'Usuario';
+          _nombreAbuelo = username.toString();
+        } else {
+          _nombreAbuelo = "Usuario";
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,56 +44,48 @@ class AbueloHome extends StatelessWidget {
       backgroundColor: const Color.fromARGB(255, 43, 140, 236),
       body: SafeArea(
         child: Padding(
-          // Márgenes laterales para que los botones no toquen los bordes
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1. Logo
+              // 1. Logo y Saludo
               Align(
                 alignment: Alignment.topLeft,
                 child: Row(
-                  // 👈 1. Cambiamos el hijo directo por una Fila
-                  crossAxisAlignment: CrossAxisAlignment
-                      .center, // Alinea el texto al centro vertical del logo
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Tu logo original
                     Image.asset(
                       'assets/images/logo.png',
                       height: 140,
                       width: 140,
                       fit: BoxFit.contain,
                     ),
-
-                    const SizedBox(
-                      width: 12,
-                    ), // 👈 2. Espacio horizontal entre el logo y el texto
-                    // 👈 3. Usamos 'Expanded' para que el texto ocupe el resto del ancho sin romperse
-                    const Expanded(
+                    const SizedBox(width: 12),
+                    Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment
-                            .start, // Alinea el texto a la izquierda
-                        mainAxisSize: MainAxisSize
-                            .min, // Hace que la columna ocupe solo el espacio necesario
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
+                          const Text(
                             'Cuida App',
                             style: TextStyle(
                               fontSize: 50,
                               fontWeight: FontWeight.bold,
-                              color: Colors
-                                  .white, // Queda genial sobre tu fondo azul
+                              color: Colors.white,
                             ),
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 4),
+                          // 👈 ACÁ ESTÁ EL CAMBIO DEL SALUDO
                           Text(
-                            'Hola! *Usuario*',
-                            style: TextStyle(
+                            'Hola $_nombreAbuelo!',
+                            style: const TextStyle(
                               fontSize: 35,
                               fontWeight: FontWeight.w500,
                               color: Colors.white,
                             ),
+                            // Esto evita que si el nombre es muy largo, rompa la pantalla
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -69,7 +93,8 @@ class AbueloHome extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 50), // Espacio entre el logo y los botones
+              const SizedBox(height: 50),
+
               // 2. Grid de 2 columnas x 3 filas
               Expanded(
                 child: Column(
@@ -81,7 +106,7 @@ class AbueloHome extends StatelessWidget {
                           Expanded(
                             child: _buildMenuButton(
                               text: 'Perfil',
-                              backgroundColor: const Color(0xFF1E88E5), // Azul
+                              backgroundColor: const Color(0xFF1E88E5),
                               textColor: Colors.white,
                               iconPath: 'assets/images/buttons/perfil.png',
                               onPressed: () {
@@ -98,7 +123,7 @@ class AbueloHome extends StatelessWidget {
                           Expanded(
                             child: _buildMenuButton(
                               text: 'Subir Imagen',
-                              backgroundColor: const Color(0xFF43A047), // Verde
+                              backgroundColor: const Color(0xFF43A047),
                               textColor: Colors.white,
                               iconPath: 'assets/images/buttons/pics.png',
                               onPressed: () {},
@@ -115,21 +140,25 @@ class AbueloHome extends StatelessWidget {
                           Expanded(
                             child: _buildMenuButton(
                               text: 'Medicamentos',
-                              backgroundColor: const Color(
-                                0xFFFFB300,
-                              ), // Amarillo/Naranja
+                              backgroundColor: const Color(0xFFFFB300),
                               textColor: Colors.black87,
                               iconPath: 'assets/images/buttons/medicamento.png',
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const AbueloMedicamentos(),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: _buildMenuButton(
                               text: 'Localización',
-                              backgroundColor: const Color(
-                                0xFF546E7A,
-                              ), // Gris oscuro
+                              backgroundColor: const Color(0xFF546E7A),
                               textColor: Colors.white,
                               iconPath: 'assets/images/buttons/gps.png',
                               onPressed: () {},
@@ -139,19 +168,18 @@ class AbueloHome extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    // Fila 3
                     Expanded(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           _buildEmergencyButton(
                             text: 'Emergencia',
-                            backgroundColor: const Color(
-                              0xFFE53935,
-                            ), // Rojo para alertas
+                            backgroundColor: const Color(0xFFE53935),
                             textColor: Colors.white,
                             iconPath: 'assets/images/buttons/heart.png',
                             onPressed: () {
-                              // Lógica del botón
+                              // Lógica del botón de emergencia
                             },
                           ),
                         ],
@@ -178,11 +206,9 @@ class AbueloHome extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: backgroundColor,
         minimumSize: const Size(double.infinity, 68),
-        padding: const EdgeInsets.symmetric(vertical: 22), // Altura del botón
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16), // Bordes redondeados
-        ),
-        elevation: 2, // Sombra ligera
+        padding: const EdgeInsets.symmetric(vertical: 22),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 2,
       ),
       onPressed: onPressed,
       child: Column(

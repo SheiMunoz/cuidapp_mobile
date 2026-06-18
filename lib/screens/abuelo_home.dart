@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'abuelo_perfil.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class AbueloHome extends StatelessWidget {
   const AbueloHome({super.key});
@@ -56,7 +58,7 @@ class AbueloHome extends StatelessWidget {
                           Text(
                             'Hola! *Usuario*',
                             style: TextStyle(
-                              fontSize: 40,
+                              fontSize: 35,
                               fontWeight: FontWeight.w500,
                               color: Colors.white,
                             ),
@@ -191,7 +193,7 @@ class AbueloHome extends StatelessWidget {
           Text(
             text,
             style: TextStyle(
-              fontSize: 30,
+              fontSize: 28,
               fontWeight: FontWeight.w600,
               color: textColor,
               letterSpacing: 0.5,

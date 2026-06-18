@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'package:cuidapp_mobile/widgets/cuidapp_bar.dart';
+import 'package:cuidapp_mobile/services/api_service.dart';
+import 'login.dart';
 
 class AbueloPerfil extends StatefulWidget {
   const AbueloPerfil({super.key});
@@ -11,6 +15,7 @@ class AbueloPerfil extends StatefulWidget {
 class _AbueloPerfilState extends State<AbueloPerfil> {
   String _tipoMedicion = "";
 
+  // ── Cámara ─────────────────────────────────────────────────────────
   void _abrirCamarayEnviar() async {
     final ImagePicker selector = ImagePicker();
     final XFile? fotoMedicion = await selector.pickImage(
@@ -23,16 +28,45 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
         SnackBar(content: Text('Foto de $_tipoMedicion enviada con éxito')),
       );
     }
+  } // ← _abrirCamarayEnviar cierra acá
+
+  // ── Cerrar sesión ──────────────────────────────────────────────────
+  Future<void> _cerrarSesion() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Cerrar sesión'),
+        content: const Text('¿Seguro que querés salir?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Salir', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    await ApiService.cerrarSesion();
+    if (!mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (_) => false,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 43, 140, 236),
-
-      // Barra superior con el título
       appBar: AppBar(
-        // 3. Cambiamos fontweight a fontWeight (con W mayúscula)
         title: const Text(
           'Perfil',
           style: TextStyle(fontWeight: FontWeight.bold),
@@ -40,9 +74,14 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
         backgroundColor: const Color.fromARGB(255, 43, 140, 236),
         foregroundColor: Colors.white,
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Cerrar sesión',
+            onPressed: _cerrarSesion,
+          ),
+        ],
       ),
-
-      // Cuerpo de la pantalla con los botones
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -51,18 +90,12 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
             children: [
               const Center(
                 child: CircleAvatar(
-                  radius: 50, // Tamaño de la foto
+                  radius: 50,
                   backgroundColor: Color(0xFFE0E0E0),
-                  child: Icon(
-                    Icons.person,
-                    size: 60,
-                    color: Colors.grey,
-                  ), // Foto temporal
+                  child: Icon(Icons.person, size: 60, color: Colors.grey),
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Pendiente conexión con API
               const Text(
                 'Nombre: *Usuario*',
                 textAlign: TextAlign.center,
@@ -79,11 +112,9 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 32),
-
-              // Boton
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E88E5), // Azul
+                  backgroundColor: const Color(0xFF1E88E5),
                   foregroundColor: Colors.white,
                   minimumSize: const Size(double.infinity, 68),
                   shape: RoundedRectangleBorder(
@@ -100,7 +131,6 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
                     letterSpacing: 1,
                   ),
                 ),
-                // Pasar a otra ventana
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -110,10 +140,7 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
                   );
                 },
               ),
-
               const SizedBox(height: 32),
-
-              // Seccion de controles médicos
               Card(
                 elevation: 2,
                 shape: RoundedRectangleBorder(
@@ -162,7 +189,6 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
     );
   }
 
-  // Funcionamiento general de los botones
   Widget _buildControlBtn({
     required String titulo,
     required IconData icon,
@@ -179,9 +205,7 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
             elevation: 0,
           ),
           onPressed: () {
-            setState(() {
-              _tipoMedicion = titulo.toLowerCase();
-            });
+            setState(() => _tipoMedicion = titulo.toLowerCase());
             _abrirCamarayEnviar();
           },
           child: Icon(icon, size: 30),

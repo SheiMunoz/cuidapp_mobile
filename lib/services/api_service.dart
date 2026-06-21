@@ -357,4 +357,52 @@ class ApiService {
       return {'ok': false, 'error': 'Fallo de conexión: $e'};
     }
   }
+
+  // ── Extraer dato de foto (Carga de medición) ──────────────────────────
+  static Future<Map<String, dynamic>> extraerDatoMedicion(
+    int fotoId,
+    String tipo,
+    double valor1, {
+    double? valor2,
+    String observaciones = '',
+  }) async {
+    final url = Uri.parse('$baseUrl/api/v1/fotos/$fotoId/extraer-dato/');
+    try {
+      final response = await http.post(
+        url,
+        headers: await _getHeaders(),
+        body: jsonEncode({
+          'tipo': tipo,
+          'valor_1': valor1,
+          'valor_2': valor2,
+          'observaciones': observaciones,
+        }),
+      );
+      if (response.statusCode == 200) {
+        return {'ok': true};
+      } else {
+        final body = jsonDecode(response.body);
+        return {'ok': false, 'error': body['mensaje'] ?? 'Error desconocido'};
+      }
+    } catch (e) {
+      return {'ok': false, 'error': 'Fallo de conexión: $e'};
+    }
+  }
+
+  // ── Historial de Mediciones (Para Gráficos) ─────────────────────────
+  static Future<List<dynamic>> getHistorialMediciones(int pacienteId) async {
+    final url = Uri.parse(
+      '$baseUrl/api/v1/pacientes/$pacienteId/historial-mediciones/',
+    );
+    try {
+      final response = await http.get(url, headers: await _getHeaders());
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Error al cargar el historial de mediciones');
+      }
+    } catch (e) {
+      throw Exception('Fallo de conexión: $e');
+    }
+  }
 }

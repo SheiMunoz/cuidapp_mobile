@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class AbueloDetalle extends StatefulWidget {
   final int pacienteId;
@@ -23,6 +24,7 @@ class _AbueloDetalleState extends State<AbueloDetalle> {
   Map<String, dynamic>? _dispositivo;
   List<dynamic> _fotos = [];
   List<dynamic> _medicamentos = [];
+  List<dynamic> _historialMediciones = [];
   bool _cargando = true;
 
   @override
@@ -38,6 +40,7 @@ class _AbueloDetalleState extends State<AbueloDetalle> {
       ApiService.getDispositivoPaciente(widget.pacienteId),
       ApiService.getFotosPaciente(widget.pacienteId),
       ApiService.getMedicamentosPaciente(widget.pacienteId),
+      ApiService.getHistorialMediciones(widget.pacienteId),
     ]);
 
     if (!mounted) return;
@@ -45,6 +48,7 @@ class _AbueloDetalleState extends State<AbueloDetalle> {
       _dispositivo = resultados[0] as Map<String, dynamic>?;
       _fotos = (resultados[1] as List<dynamic>?) ?? [];
       _medicamentos = (resultados[2] as List<dynamic>?) ?? [];
+      _historialMediciones = (resultados[3] as List<dynamic>?) ?? [];
       _cargando = false;
     });
   }
@@ -581,13 +585,21 @@ class _AbueloDetalleState extends State<AbueloDetalle> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  backgroundColor: const Color(0xFF43A047),
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  backgroundColor: (tipo == 'medicion')
+                      ? const Color(0xFF1E88E5)
+                      : const Color(0xFF43A047),
                   foregroundColor: Colors.white,
-                  textStyle: const TextStyle(fontSize: 11),
+                  textStyle: const TextStyle(fontSize: 10),
                 ),
-                onPressed: () => _marcarRevisado(foto),
-                child: const Text('Marcar revisado'),
+                onPressed: () {
+                  if (tipo == 'medicion') {
+                    _mostrarDialogoExtraerDato(foto);
+                  } else {
+                    _marcarRevisado(foto);
+                  }
+                },
+                child: Text(tipo == 'medicion' ? 'Extraer Datos' : 'Revisar'),
               ),
             ),
           ],
@@ -707,6 +719,141 @@ class _AbueloDetalleState extends State<AbueloDetalle> {
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _mostrarDialogoExtraerDato(Map<String, dynamic> foto) async {
+    // 1. Revisamos la configuración del abuelo desde su perfil
+    final perfil = widget.perfil;
+    final requierePresion = perfil?['requiere_control_presion'] == true;
+    final requiereGlucosa = perfil?['requiere_control_glucosa'] == true;
+    final requierePeso = perfil?['requiere_control_peso'] == true;
+
+    // 2. Armamos la lista de opciones dinámicamente
+    List<DropdownMenuItem<String>> opcionesMedicion = [];
+
+    if (requierePresion) {
+      opcionesMedicion.add(
+        const DropdownMenuItem(
+          value: 'presion',
+          child: Text('Presión Arterial'),
+        ),
+      );
+    }
+    if (requiereGlucosa) {
+      opcionesMedicion.add(
+        const DropdownMenuItem(value: 'glucosa', child: Text('Glucosa')),
+      );
+    }
+    if (requierePeso) {
+      opcionesMedicion.add(
+        const DropdownMenuItem(value: 'peso', child: Text('Peso')),
+      );
+    }
+
+    // Un "salvavidas": si el abuelo no tiene controles asignados pero el
+    // cuidador quiere cargar un dato igual, mostramos todas por defecto.
+    if (opcionesMedicion.isEmpty) {
+      opcionesMedicion = const [
+        DropdownMenuItem(value: 'presion', child: Text('Presión Arterial')),
+        DropdownMenuItem(value: 'glucosa', child: Text('Glucosa')),
+        DropdownMenuItem(value: 'peso', child: Text('Peso')),
+      ];
+    }
+
+    // 3. Asignamos como valor inicial la primera opción de la lista
+    final tipoController = TextEditingController(
+      text: opcionesMedicion.first.value,
+    );
+    final valor1Controller = TextEditingController();
+    final valor2Controller = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            final isPresion = tipoController.text == 'presion';
+
+            return AlertDialog(
+              title: const Text('Cargar medición desde foto'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 4. Conectamos la lista dinámica al Dropdown
+                  DropdownButtonFormField<String>(
+                    value: tipoController.text,
+                    items: opcionesMedicion,
+                    onChanged: (val) {
+                      setStateDialog(() => tipoController.text = val!);
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'Tipo de Medición',
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: valor1Controller,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: isPresion ? 'Sistólica (Ej: 12.0)' : 'Valor',
+                    ),
+                  ),
+                  if (isPresion) ...[
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: valor2Controller,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Diastólica (Ej: 8.0)',
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (valor1Controller.text.isEmpty) return;
+
+                    final result = await ApiService.extraerDatoMedicion(
+                      foto['id'],
+                      tipoController.text,
+                      double.tryParse(valor1Controller.text) ?? 0.0,
+                      valor2: isPresion
+                          ? double.tryParse(valor2Controller.text)
+                          : null,
+                    );
+
+                    if (result['ok']) {
+                      Navigator.pop(context);
+                      _cargarTodo();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Medición guardada y graficada'),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(result['error'])));
+                    }
+                  },
+                  child: const Text('Guardar y Clasificar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

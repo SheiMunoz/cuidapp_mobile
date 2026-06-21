@@ -29,9 +29,7 @@ class _AbueloMedicamentosState extends State<AbueloMedicamentos> {
     }
   }
 
-  // Lógica para registrar la toma
   Future<void> _marcarComoTomado(int idMedicamento, String nombre) async {
-    // Mostramos un indicador de carga mientras avisa a Django
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -40,9 +38,7 @@ class _AbueloMedicamentosState extends State<AbueloMedicamentos> {
 
     final resultado = await ApiService.registrarToma(idMedicamento);
 
-    // Cerramos el indicador de carga
     if (mounted) Navigator.pop(context);
-
     if (!mounted) return;
 
     if (resultado['ok']) {
@@ -52,7 +48,6 @@ class _AbueloMedicamentosState extends State<AbueloMedicamentos> {
           backgroundColor: Colors.green,
         ),
       );
-      // Volvemos a pedir la lista para que se actualice el stock visualmente
       _cargarMedicamentos();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -90,65 +85,125 @@ class _AbueloMedicamentosState extends State<AbueloMedicamentos> {
               itemCount: _medicamentos.length,
               itemBuilder: (context, index) {
                 final med = _medicamentos[index];
+                final puedeTomar = med['puede_tomar_ahora'] == true;
+                final proximaToma = med['proxima_toma_texto'];
+
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 8,
+                      vertical: 12,
                     ),
-                    leading: const Icon(
-                      Icons.medication,
-                      color: Colors.blue,
-                      size: 40,
-                    ),
-                    title: Text(
-                      med['nombre'] ?? 'Sin nombre',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(
-                          '${med['dosis_por_toma']} ${med['unidad_medida']}',
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.medication,
+                              color: Colors.blue,
+                              size: 40,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    med['nombre'] ?? 'Sin nombre',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${med['dosis_por_toma']} ${med['unidad_medida']}',
+                                  ),
+                                  Text(
+                                    'Stock actual: ${med['stock_actual']}',
+                                    style: TextStyle(
+                                      color:
+                                          med['stock_actual'] <=
+                                              med['umbral_stock_minimo']
+                                          ? Colors.red
+                                          : Colors.grey[700],
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: puedeTomar
+                                    ? Colors.green
+                                    : Colors.grey.shade400,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onPressed: puedeTomar
+                                  ? () => _marcarComoTomado(
+                                      med['id'],
+                                      med['nombre'],
+                                    )
+                                  : null,
+                              child: const Text(
+                                'Tomar',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          'Stock actual: ${med['stock_actual']}',
-                          style: TextStyle(
-                            color:
-                                med['stock_actual'] <=
-                                    med['umbral_stock_minimo']
-                                ? Colors.red
-                                : Colors.grey[700],
-                            fontWeight: FontWeight.bold,
+                        if (!puedeTomar) ...[
+                          const SizedBox(height: 10),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade50,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: Colors.orange,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.check_circle,
+                                  color: Colors.deepOrange,
+                                  size: 26,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    proximaToma != null
+                                        ? 'Ya la tomaste. Próxima toma: $proximaToma'
+                                        : 'Ya la tomaste hoy',
+                                    style: const TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.deepOrange,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                        ],
                       ],
-                    ),
-                    // El botón de acción a la derecha
-                    trailing: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onPressed: () =>
-                          _marcarComoTomado(med['id'], med['nombre']),
-                      child: const Text(
-                        'Tomar',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
                     ),
                   ),
                 );

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:cuidapp_mobile/widgets/cuidapp_bar.dart';
 import 'package:cuidapp_mobile/services/api_service.dart';
 import 'abuelo_medicamento.dart';
 import 'login.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'chat_screen.dart';
 
 class AbueloPerfil extends StatefulWidget {
   const AbueloPerfil({super.key});
@@ -14,9 +15,6 @@ class AbueloPerfil extends StatefulWidget {
 }
 
 class _AbueloPerfilState extends State<AbueloPerfil> {
-  String _tipoMedicion = "";
-
-  // agregando datos de la API
   bool _cargando = true;
   Map<String, dynamic>? _perfil;
 
@@ -36,21 +34,6 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
       });
     }
   }
-
-  // ── Cámara ─────────────────────────────────────────────────────────
-  void _abrirCamarayEnviar() async {
-    final ImagePicker selector = ImagePicker();
-    final XFile? fotoMedicion = await selector.pickImage(
-      source: ImageSource.camera,
-    );
-
-    if (fotoMedicion != null) {
-      print('¡Foto de $_tipoMedicion tomada!');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Foto de $_tipoMedicion enviada con éxito')),
-      );
-    }
-  } // ← _abrirCamarayEnviar cierra acá
 
   // ── Cerrar sesión ──────────────────────────────────────────────────
   Future<void> _cerrarSesion() async {
@@ -228,12 +211,12 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
             const SizedBox(height: 32),
             if (botonesControl.isNotEmpty)
               Card(
-                elevation: 2,
+                elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(15),
                   child: Column(
                     children: [
                       const Text(
@@ -253,6 +236,8 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
                   ),
                 ),
               ),
+            const SizedBox(height: 8),
+            _buildListaCuidadores(),
           ],
         ),
       ),
@@ -266,23 +251,133 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
   }) {
     return Column(
       children: [
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: color.withOpacity(0.1),
-            foregroundColor: color,
-            shape: const CircleBorder(),
-            fixedSize: const Size(65, 65),
-            elevation: 0,
+        Container(
+          width: 65,
+          height: 65,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            shape: BoxShape.circle,
           ),
-          onPressed: () {
-            setState(() => _tipoMedicion = titulo.toLowerCase());
-            _abrirCamarayEnviar();
-          },
           child: Icon(icon, size: 30),
         ),
         const SizedBox(height: 8),
         Text(titulo, style: const TextStyle(fontWeight: FontWeight.bold)),
       ],
+    );
+  }
+
+  Future<void> _llamar(String telefono) async {
+    final uri = Uri.parse('tel:$telefono');
+    if (!await launchUrl(uri)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo iniciar la llamada')),
+        );
+      }
+    }
+  }
+
+  void _abrirChat(int cuidadorId, String nombreCuidador) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            ChatScreen(otroId: cuidadorId, nombreOtro: nombreCuidador),
+      ),
+    );
+  }
+
+  Widget _buildListaCuidadores() {
+    final List<dynamic> tutores = _perfil?['tutores_info'] ?? [];
+
+    if (tutores.isEmpty) return const SizedBox.shrink();
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: const EdgeInsets.only(top: 24),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Mis cuidadores',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            ...tutores.map((t) {
+              final esEmergencia = t['es_emergencia'] == true;
+              final telefono = (t['telefono'] ?? '').toString();
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: esEmergencia
+                      ? Border.all(color: Colors.red, width: 2.5)
+                      : Border.all(color: Colors.grey.shade300),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: esEmergencia
+                          ? Colors.red.shade50
+                          : Colors.blue.shade50,
+                      child: Icon(
+                        Icons.person,
+                        color: esEmergencia ? Colors.red : Colors.blue,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            t['nombre'] ?? '',
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            t['parentesco']?.toString().isNotEmpty == true
+                                ? t['parentesco']
+                                : 'Cuidador',
+                            style: const TextStyle(color: Colors.black54),
+                          ),
+                          if (esEmergencia)
+                            const Text(
+                              'Contacto de emergencia',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (telefono.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.call, color: Colors.green),
+                        onPressed: () => _llamar(telefono),
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.message, color: Colors.blue),
+                      onPressed: () => _abrirChat(
+                        t['id'] as int,
+                        (t['nombre'] ?? 'Cuidador').toString(),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
     );
   }
 }

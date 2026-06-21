@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'abuelo_perfil.dart';
 import 'abuelo_medicamento.dart';
 import 'package:cuidapp_mobile/services/api_service.dart';
+import 'package:cuidapp_mobile/services/device_service.dart';
+import 'abuelo_subir_documento.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'turnos_abuelo.dart';
+import 'campanita_notificaciones.dart';
 
 class AbueloHome extends StatefulWidget {
   const AbueloHome({super.key});
@@ -12,6 +17,7 @@ class AbueloHome extends StatefulWidget {
 
 class _AbueloHomeState extends State<AbueloHome> {
   String _nombreAbuelo = "..."; // Texto temporal mientras carga
+  String? _telefonoEmergencia;
 
   @override
   void initState() {
@@ -24,18 +30,38 @@ class _AbueloHomeState extends State<AbueloHome> {
     if (mounted) {
       setState(() {
         if (me != null && me['perfil'] != null) {
-          // Buscamos el username (o el first_name si lo tuvieras en tu serializador)
-          // Asumimos que tu API devuelve 'username' dentro de los datos del user
           final username =
               me['perfil']['user']?['username'] ??
               me['perfil']['username'] ??
               'Usuario';
           _nombreAbuelo = username.toString();
+          final List<dynamic> tutores = me['perfil']['tutores_info'] ?? [];
+          final emergencia = tutores.firstWhere(
+            (t) => t['es_emergencia'] == true,
+            orElse: () => null,
+          );
+          if (emergencia != null &&
+              emergencia['telefono'].toString().isNotEmpty) {
+            _telefonoEmergencia = emergencia['telefono'];
+          }
         } else {
           _nombreAbuelo = "Usuario";
         }
       });
     }
+  }
+
+  Future<void> _llamarEmergencia() async {
+    if (_telefonoEmergencia == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No hay un cuidador de emergencia configurado'),
+        ),
+      );
+      return;
+    }
+    final uri = Uri.parse('tel:$_telefonoEmergencia');
+    await launchUrl(uri);
   }
 
   @override
@@ -70,13 +96,12 @@ class _AbueloHomeState extends State<AbueloHome> {
                           const Text(
                             'Cuida App',
                             style: TextStyle(
-                              fontSize: 50,
+                              fontSize: 45,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
                           ),
                           const SizedBox(height: 4),
-                          // 👈 ACÁ ESTÁ EL CAMBIO DEL SALUDO
                           Text(
                             'Hola $_nombreAbuelo!',
                             style: const TextStyle(
@@ -90,6 +115,7 @@ class _AbueloHomeState extends State<AbueloHome> {
                         ],
                       ),
                     ),
+                    const CampanitaNotificaciones(),
                   ],
                 ),
               ),
@@ -126,7 +152,15 @@ class _AbueloHomeState extends State<AbueloHome> {
                               backgroundColor: const Color(0xFF43A047),
                               textColor: Colors.white,
                               iconPath: 'assets/images/buttons/pics.png',
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const AbueloSubirDocumento(),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ],
@@ -157,11 +191,23 @@ class _AbueloHomeState extends State<AbueloHome> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: _buildMenuButton(
-                              text: 'Localización',
-                              backgroundColor: const Color(0xFF546E7A),
+                              text:
+                                  'Turnos\nMédicos', // El \n lo pone en dos líneas para que no quede gigante
+                              backgroundColor: const Color(
+                                0xFF009688,
+                              ), // Verde teal
                               textColor: Colors.white,
-                              iconPath: 'assets/images/buttons/gps.png',
-                              onPressed: () {},
+                              iconPath: 'assets/images/buttons/calendario.png',
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    // ¡Llamamos a la pantalla nueva!
+                                    builder: (context) =>
+                                        const TurnosAbueloScreen(),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ],
@@ -178,9 +224,7 @@ class _AbueloHomeState extends State<AbueloHome> {
                             backgroundColor: const Color(0xFFE53935),
                             textColor: Colors.white,
                             iconPath: 'assets/images/buttons/heart.png',
-                            onPressed: () {
-                              // Lógica del botón de emergencia
-                            },
+                            onPressed: _llamarEmergencia,
                           ),
                         ],
                       ),
@@ -205,12 +249,16 @@ class _AbueloHomeState extends State<AbueloHome> {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: backgroundColor,
+        foregroundColor: textColor,
         minimumSize: const Size(double.infinity, 68),
         padding: const EdgeInsets.symmetric(vertical: 22),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 2,
       ),
-      onPressed: onPressed,
+      onPressed: () {
+        DeviceService.enviarDatos();
+        onPressed();
+      },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

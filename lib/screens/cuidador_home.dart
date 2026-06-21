@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'cuidador_perfil.dart';
+import 'abuelo_detalle.dart';
+import 'chat_screen.dart';
+import 'campanita_notificaciones.dart';
 
 class CuidadorHome extends StatefulWidget {
   const CuidadorHome({super.key});
@@ -10,26 +13,56 @@ class CuidadorHome extends StatefulWidget {
 }
 
 class _CuidadorHomeState extends State<CuidadorHome> {
-  late final Future<List<dynamic>?> _futureAbuelos;
+  Future<List<dynamic>?>? _futureAbuelos;
+  String _nombreCuidador = 'Cuidador';
 
   @override
   void initState() {
     super.initState();
-    _futureAbuelos = ApiService.getAbuelosACargo();
+    _cargarAbuelos();
+    _cargarNombreCuidador();
+  }
+
+  void _cargarAbuelos() {
+    setState(() {
+      _futureAbuelos = ApiService.getAbuelosACargo();
+    });
+  }
+
+  Future<void> _cargarNombreCuidador() async {
+    final me = await ApiService.getMe();
+    if (!mounted || me == null) return;
+
+    final perfil = me['perfil'] ?? me;
+    final nombre =
+        perfil['nombre'] ??
+        perfil['first_name'] ??
+        perfil['username'] ??
+        perfil['user']?['username'];
+
+    if (nombre != null && nombre.toString().trim().isNotEmpty) {
+      setState(() {
+        _nombreCuidador = nombre.toString();
+      });
+    }
   }
 
   String _nombreDeAbuelo(Map<String, dynamic> abuelo) {
-    if (abuelo['nombre'] != null &&
-        abuelo['nombre'].toString().trim().isNotEmpty) {
-      return abuelo['nombre'].toString();
-    }
-    if (abuelo['name'] != null && abuelo['name'].toString().trim().isNotEmpty) {
-      return abuelo['name'].toString();
-    }
-    final firstName = abuelo['first_name']?.toString() ?? '';
-    final lastName = abuelo['last_name']?.toString() ?? '';
-    final fullName = '${firstName.trim()} ${lastName.trim()}'.trim();
-    return fullName.isNotEmpty ? fullName : 'Abuelo sin nombre';
+    final user = abuelo['user'] as Map<String, dynamic>?;
+
+    final firstName = user?['first_name']?.toString().trim() ?? '';
+    final lastName = user?['last_name']?.toString().trim() ?? '';
+    final fullName = '$firstName $lastName'.trim();
+    if (fullName.isNotEmpty) return fullName;
+
+    final username = user?['username']?.toString().trim();
+    if (username != null && username.isNotEmpty) return username;
+
+    return 'Abuelo sin nombre';
+  }
+
+  bool _tieneMensajeNuevo(Map<String, dynamic> abuelo) {
+    return abuelo['tiene_mensaje_no_leido'] == true;
   }
 
   String _detalleDeAbuelo(Map<String, dynamic> abuelo) {
@@ -41,6 +74,38 @@ class _CuidadorHomeState extends State<CuidadorHome> {
       condicion.toString().trim(),
     ].where((value) => value.isNotEmpty).toList();
     return parts.isEmpty ? 'Detalle no disponible' : parts.join(' · ');
+  }
+
+  Future<void> _abrirChat(int pacienteId, String nombreAbuelo) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            ChatScreen(otroId: pacienteId, nombreOtro: nombreAbuelo),
+      ),
+    );
+    // Al volver del chat, los mensajes ya se marcaron como leídos en el
+    // backend. Recargamos la lista para que el badge "Mensaje nuevo"
+    // desaparezca.
+    _cargarAbuelos();
+  }
+
+  Future<void> _abrirDetalle(
+    int pacienteId,
+    String nombreAbuelo,
+    Map<String, dynamic> abuelo,
+  ) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AbueloDetalle(
+          pacienteId: pacienteId,
+          nombre: nombreAbuelo,
+          perfil: abuelo,
+        ),
+      ),
+    );
+    _cargarAbuelos();
   }
 
   @override
@@ -66,31 +131,33 @@ class _CuidadorHomeState extends State<CuidadorHome> {
                       fit: BoxFit.contain,
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
+                          const Text(
                             'Cuida App',
                             style: TextStyle(
-                              fontSize: 50,
+                              fontSize: 45,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 4),
                           Text(
-                            'Hola! *Usuario*',
-                            style: TextStyle(
+                            'Hola $_nombreCuidador!',
+                            style: const TextStyle(
                               fontSize: 35,
                               fontWeight: FontWeight.w500,
                               color: Colors.white,
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
                     ),
+                    const CampanitaNotificaciones(),
                   ],
                 ),
               ),
@@ -105,84 +172,132 @@ class _CuidadorHomeState extends State<CuidadorHome> {
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: FutureBuilder<List<dynamic>?>(
-                  future: _futureAbuelos,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      );
-                    }
-
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: Text(
-                          'Error al cargar los abuelos. Intentá de nuevo.',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      );
-                    }
-
-                    final abuelos = snapshot.data;
-                    if (abuelos == null || abuelos.isEmpty) {
-                      return const Center(
-                        child: Text(
-                          'No hay abuelos asignados todavía.',
-                          style: TextStyle(color: Colors.white, fontSize: 18),
-                          textAlign: TextAlign.center,
-                        ),
-                      );
-                    }
-
-                    return ListView.separated(
-                      itemCount: abuelos.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 16),
-                      itemBuilder: (context, index) {
-                        final abuelo = Map<String, dynamic>.from(
-                          abuelos[index] as Map,
+                child: RefreshIndicator(
+                  onRefresh: () async => _cargarAbuelos(),
+                  child: FutureBuilder<List<dynamic>?>(
+                    future: _futureAbuelos,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(color: Colors.white),
                         );
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 16,
+                      }
+
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                            'Error al cargar los abuelos. Intentá de nuevo.',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
                             ),
-                            title: Text(
-                              _nombreDeAbuelo(abuelo),
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text(
-                              _detalleDeAbuelo(abuelo),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () {},
+                            textAlign: TextAlign.center,
                           ),
                         );
-                      },
-                    );
-                  },
+                      }
+
+                      final abuelos = snapshot.data;
+                      if (abuelos == null || abuelos.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            'No hay abuelos asignados todavía.',
+                            style: TextStyle(color: Colors.white, fontSize: 18),
+                            textAlign: TextAlign.center,
+                          ),
+                        );
+                      }
+
+                      return ListView.separated(
+                        itemCount: abuelos.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          final abuelo = Map<String, dynamic>.from(
+                            abuelos[index] as Map,
+                          );
+                          final mensajeNuevo = _tieneMensajeNuevo(abuelo);
+                          final pacienteId = abuelo['user']?['id'];
+                          final nombreAbuelo = _nombreDeAbuelo(abuelo);
+
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 16,
+                              ),
+                              title: Text(
+                                nombreAbuelo,
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: mensajeNuevo
+                                  ? const Row(
+                                      children: [
+                                        Icon(
+                                          Icons.mark_chat_unread,
+                                          size: 16,
+                                          color: Color(0xFF1E88E5),
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'Mensaje nuevo',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Color(0xFF1E88E5),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Text(
+                                      'No hay mensajes nuevos',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      mensajeNuevo
+                                          ? Icons.mark_chat_unread
+                                          : Icons.chat_bubble_outline,
+                                      color: const Color(0xFF1E88E5),
+                                    ),
+                                    onPressed: pacienteId == null
+                                        ? null
+                                        : () => _abrirChat(
+                                            pacienteId,
+                                            nombreAbuelo,
+                                          ),
+                                  ),
+                                  const Icon(Icons.chevron_right),
+                                ],
+                              ),
+                              onTap: () {
+                                if (pacienteId == null) return;
+                                _abrirDetalle(pacienteId, nombreAbuelo, abuelo);
+                              },
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 24),

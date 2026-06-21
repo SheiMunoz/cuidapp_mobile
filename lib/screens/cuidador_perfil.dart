@@ -51,37 +51,86 @@ class _CuidadorPerfilState extends State<CuidadorPerfil> {
   }
 
   String _fullName(Map<String, dynamic> data) {
-    if (data['nombre_completo'] != null &&
-        data['nombre_completo'].toString().trim().isNotEmpty) {
-      return data['nombre_completo'].toString();
-    }
-    final firstName = data['first_name'] ?? data['nombre'] ?? '';
-    final lastName = data['last_name'] ?? data['apellido'] ?? '';
+    // Apuntamos directamente al nodo 'perfil' que manda Django
+    final perfilNode = (data['perfil'] is Map) ? data['perfil'] : data;
+
+    // Buscamos first_name y last_name exactamente como se llaman en Django
+    final firstName = perfilNode['first_name'] ?? '';
+    final lastName = perfilNode['last_name'] ?? '';
     final name = '${firstName.toString().trim()} ${lastName.toString().trim()}'
         .trim();
-    return name.isNotEmpty ? name : 'Cuidador';
+
+    if (name.isNotEmpty) return name;
+    // Si no tiene nombre y apellido cargado, mostramos el username
+    return perfilNode['username']?.toString() ?? 'Cuidador';
   }
 
-  String _contacto(Map<String, dynamic> data) {
-    final email = data['email'] ?? data['correo'] ?? '';
-    final telefono = data['telefono'] ?? data['phone'] ?? data['celular'] ?? '';
-    final direccion = data['direccion'] ?? data['address'] ?? '';
+  Widget _buildDatosList(Map<String, dynamic> data) {
+    // Apuntamos directamente al nodo 'perfil'
+    final perfilNode = (data['perfil'] is Map) ? data['perfil'] : data;
 
-    final lines = <String>[];
-    if (email.toString().trim().isNotEmpty) {
-      lines.add('Email: ${email.toString().trim()}');
+    // Extraemos el email y el telefono del lugar correcto
+    final email = (perfilNode['email'] ?? '').toString();
+    final telefono = (perfilNode['telefono'] ?? '').toString();
+
+    // Dejamos dirección por si en algún momento lo sumás a tu modelo
+    final direccion = (perfilNode['direccion'] ?? '').toString();
+
+    List<Widget> items = [];
+
+    if (email.trim().isNotEmpty) {
+      items.add(_itemDato(Icons.email, 'Email', email.trim()));
     }
-    if (telefono.toString().trim().isNotEmpty) {
-      lines.add('Teléfono: ${telefono.toString().trim()}');
+    if (telefono.trim().isNotEmpty) {
+      items.add(_itemDato(Icons.phone, 'Teléfono', telefono.trim()));
     }
-    if (direccion.toString().trim().isNotEmpty) {
-      lines.add('Dirección: ${direccion.toString().trim()}');
-    }
-    if (lines.isEmpty) {
-      lines.add('Contacto no disponible');
+    if (direccion.trim().isNotEmpty) {
+      items.add(_itemDato(Icons.location_on, 'Dirección', direccion.trim()));
     }
 
-    return lines.join('\n');
+    if (items.isEmpty) {
+      return const Text(
+        'No hay datos adicionales cargados.',
+        style: TextStyle(fontSize: 16, color: Colors.black54),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: items,
+    );
+  }
+
+  // Plantilla visual para cada dato (Ícono + Título + Valor)
+  Widget _itemDato(IconData icono, String titulo, String valor) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Row(
+        children: [
+          Icon(icono, color: const Color(0xFF1E88E5), size: 28),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  titulo,
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+                Text(
+                  valor,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -159,20 +208,15 @@ class _CuidadorPerfilState extends State<CuidadorPerfil> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const Text(
-                          'Contacto',
+                          'Información del Perfil',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          _contacto(perfil),
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.black87,
-                          ),
-                        ),
+                        const SizedBox(height: 20),
+                        // Llamamos a la nueva función que arma la lista de datos
+                        _buildDatosList(perfil),
                       ],
                     ),
                   ),

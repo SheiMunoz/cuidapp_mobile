@@ -7,7 +7,7 @@ import 'dart:io';
 class ApiService {
   // Emulador: 10.0.2.2, wifi: ip de PC, usb: localhost
 
-  static const String baseUrl = 'http://127.0.0.1:8000';
+  static const String baseUrl = 'https://cuidapp-mzne.onrender.com';
 
   // ── Guardar y leer tokens ──────────────────────────────────────────
 
@@ -51,7 +51,8 @@ class ApiService {
         return {'ok': false, 'error': 'Usuario o contraseña incorrectos'};
       }
     } catch (e) {
-      return {'ok': false, 'error': 'No se pudo conectar al servidor'};
+      print('⚠️ ERROR DE CONEXIÓN: $e');
+      return {'ok': false, 'error': 'Error de conexión: ${e.toString()}'};
     }
   }
 

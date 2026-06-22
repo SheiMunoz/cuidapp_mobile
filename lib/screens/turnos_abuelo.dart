@@ -17,7 +17,7 @@ class _TurnosAbueloScreenState extends State<TurnosAbueloScreen> {
   bool _localeListo = false;
   String? _error;
 
-  // Eventos agrupados por día (clave normalizada a medianoche)
+  // Eventos agrupados por día
   Map<DateTime, List<Map<String, dynamic>>> _eventosPorDia = {};
   Map<String, dynamic>? _proximoEvento;
 
@@ -70,7 +70,7 @@ class _TurnosAbueloScreenState extends State<TurnosAbueloScreen> {
         );
       }
 
-      // Buscamos el próximo evento (el más cercano que todavía no pasó)
+      // Buscamos el próximo evento
       final ahora = DateTime.now();
       final todos = agrupados.values.expand((lista) => lista).toList()
         ..sort(

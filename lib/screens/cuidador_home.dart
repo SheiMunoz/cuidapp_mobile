@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../services/api_service.dart';
 import 'cuidador_perfil.dart';
 import 'abuelo_detalle.dart';
@@ -65,17 +66,6 @@ class _CuidadorHomeState extends State<CuidadorHome> {
     return abuelo['tiene_mensaje_no_leido'] == true;
   }
 
-  String _detalleDeAbuelo(Map<String, dynamic> abuelo) {
-    final edad = abuelo['edad'] != null ? 'Edad ${abuelo['edad']}' : '';
-    final condicion =
-        abuelo['condicion'] ?? abuelo['diagnostico'] ?? abuelo['detalle'] ?? '';
-    final parts = [
-      edad,
-      condicion.toString().trim(),
-    ].where((value) => value.isNotEmpty).toList();
-    return parts.isEmpty ? 'Detalle no disponible' : parts.join(' · ');
-  }
-
   Future<void> _abrirChat(int pacienteId, String nombreAbuelo) async {
     await Navigator.push(
       context,
@@ -84,9 +74,6 @@ class _CuidadorHomeState extends State<CuidadorHome> {
             ChatScreen(otroId: pacienteId, nombreOtro: nombreAbuelo),
       ),
     );
-    // Al volver del chat, los mensajes ya se marcaron como leídos en el
-    // backend. Recargamos la lista para que el badge "Mensaje nuevo"
-    // desaparezca.
     _cargarAbuelos();
   }
 
@@ -114,7 +101,8 @@ class _CuidadorHomeState extends State<CuidadorHome> {
       backgroundColor: const Color.fromARGB(255, 43, 140, 236),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
+          // ✅ Padding responsive
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 30.h),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -126,33 +114,34 @@ class _CuidadorHomeState extends State<CuidadorHome> {
                   children: [
                     Image.asset(
                       'assets/images/logo.png',
-                      height: 140,
-                      width: 140,
+                      height: 100.sp, // ✅ Logo responsive
+                      width: 100.sp,
                       fit: BoxFit.contain,
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 10.w), // ✅ Espacio responsive
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
+                          Text(
                             'Cuida App',
                             style: TextStyle(
-                              fontSize: 45,
+                              fontSize: 32.sp, // ✅ Texto responsive
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 2.h), // ✅ Espacio responsive
                           Text(
                             'Hola $_nombreCuidador!',
-                            style: const TextStyle(
-                              fontSize: 35,
+                            style: TextStyle(
+                              fontSize: 24.sp, // ✅ Texto responsive
                               fontWeight: FontWeight.w500,
                               color: Colors.white,
                             ),
                             overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ],
                       ),
@@ -161,16 +150,16 @@ class _CuidadorHomeState extends State<CuidadorHome> {
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
-              const Text(
+              SizedBox(height: 24.h), // ✅ Espacio responsive
+              Text(
                 'Abuelos a cargo',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 28,
+                  fontSize: 22.sp, // ✅ Texto responsive
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 12.h), // ✅ Espacio responsive
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () async => _cargarAbuelos(),
@@ -178,8 +167,11 @@ class _CuidadorHomeState extends State<CuidadorHome> {
                     future: _futureAbuelos,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                          child: CircularProgressIndicator(color: Colors.white),
+                        return Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3.w, // ✅ Grosor responsive
+                          ),
                         );
                       }
 
@@ -187,9 +179,9 @@ class _CuidadorHomeState extends State<CuidadorHome> {
                         return Center(
                           child: Text(
                             'Error al cargar los abuelos. Intentá de nuevo.',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 18,
+                              fontSize: 16.sp, // ✅ Texto responsive
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -198,10 +190,13 @@ class _CuidadorHomeState extends State<CuidadorHome> {
 
                       final abuelos = snapshot.data;
                       if (abuelos == null || abuelos.isEmpty) {
-                        return const Center(
+                        return Center(
                           child: Text(
                             'No hay abuelos asignados todavía.',
-                            style: TextStyle(color: Colors.white, fontSize: 18),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16.sp, // ✅ Texto responsive
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         );
@@ -209,7 +204,7 @@ class _CuidadorHomeState extends State<CuidadorHome> {
 
                       return ListView.separated(
                         itemCount: abuelos.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        separatorBuilder: (_, __) => SizedBox(height: 12.h),
                         itemBuilder: (context, index) {
                           final abuelo = Map<String, dynamic>.from(
                             abuelos[index] as Map,
@@ -221,50 +216,58 @@ class _CuidadorHomeState extends State<CuidadorHome> {
                           return Container(
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
+                              borderRadius: BorderRadius.circular(
+                                14.r,
+                              ), // ✅ Radio responsive
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                                  blurRadius: 8.r, // ✅ Sombra responsive
+                                  offset: Offset(0, 3.h), // ✅ Offset responsive
                                 ),
                               ],
                             ),
                             child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 16,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16.w, // ✅ Padding responsive
+                                vertical: 12.h,
                               ),
                               title: Text(
                                 nombreAbuelo,
-                                style: const TextStyle(
-                                  fontSize: 22,
+                                style: TextStyle(
+                                  fontSize: 18.sp, // ✅ Texto responsive
                                   fontWeight: FontWeight.bold,
                                 ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
                               ),
                               subtitle: mensajeNuevo
-                                  ? const Row(
+                                  ? Row(
                                       children: [
                                         Icon(
                                           Icons.mark_chat_unread,
-                                          size: 16,
-                                          color: Color(0xFF1E88E5),
+                                          size: 14.sp, // ✅ Icono responsive
+                                          color: const Color(0xFF1E88E5),
                                         ),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          'Mensaje nuevo',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            color: Color(0xFF1E88E5),
-                                            fontWeight: FontWeight.bold,
+                                        SizedBox(width: 4.w),
+                                        Flexible(
+                                          child: Text(
+                                            'Mensaje nuevo',
+                                            style: TextStyle(
+                                              fontSize:
+                                                  14.sp, // ✅ Texto responsive
+                                              color: const Color(0xFF1E88E5),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                       ],
                                     )
                                   : Text(
                                       'No hay mensajes nuevos',
-                                      style: const TextStyle(
-                                        fontSize: 16,
+                                      style: TextStyle(
+                                        fontSize: 14.sp, // ✅ Texto responsive
                                         color: Colors.black54,
                                       ),
                                     ),
@@ -277,6 +280,7 @@ class _CuidadorHomeState extends State<CuidadorHome> {
                                           ? Icons.mark_chat_unread
                                           : Icons.chat_bubble_outline,
                                       color: const Color(0xFF1E88E5),
+                                      size: 22.sp, // ✅ Icono responsive
                                     ),
                                     onPressed: pacienteId == null
                                         ? null
@@ -285,7 +289,10 @@ class _CuidadorHomeState extends State<CuidadorHome> {
                                             nombreAbuelo,
                                           ),
                                   ),
-                                  const Icon(Icons.chevron_right),
+                                  Icon(
+                                    Icons.chevron_right,
+                                    size: 22.sp, // ✅ Icono responsive
+                                  ),
                                 ],
                               ),
                               onTap: () {
@@ -300,20 +307,28 @@ class _CuidadorHomeState extends State<CuidadorHome> {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 20.h), // ✅ Espacio responsive
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1E88E5),
                   foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 64),
+                  minimumSize: Size(double.infinity, 50.h), // ✅ Alto responsive
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(
+                      12.r,
+                    ), // ✅ Radio responsive
                   ),
+                  padding: EdgeInsets.symmetric(
+                    vertical: 12.h,
+                  ), // ✅ Padding responsive
                 ),
-                icon: const Icon(Icons.person, size: 28),
-                label: const Text(
+                icon: Icon(Icons.person, size: 24.sp), // ✅ Icono responsive
+                label: Text(
                   'Ir a mi perfil',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 18.sp, // ✅ Texto responsive
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 onPressed: () {
                   Navigator.push(

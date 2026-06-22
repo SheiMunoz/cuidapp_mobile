@@ -9,7 +9,7 @@ class ApiService {
 
   static const String baseUrl = 'https://cuidapp-mzne.onrender.com';
 
-  // ── Guardar y leer tokens ──────────────────────────────────────────
+  // ── Guardar y leer tokens
 
   static Future<void> guardarTokens(String access, String refresh) async {
     final prefs = await SharedPreferences.getInstance();
@@ -28,7 +28,7 @@ class ApiService {
     await prefs.remove('refresh_token');
   }
 
-  // ── Login ──────────────────────────────────────────────────────────
+  // ── Login
 
   static Future<Map<String, dynamic>> login(
     String username,
@@ -41,7 +41,7 @@ class ApiService {
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'username': username, 'password': password}),
           )
-          .timeout(const Duration(seconds: 10)); // ← timeout de 10 segundos
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -56,7 +56,7 @@ class ApiService {
     }
   }
 
-  // ── Perfil del usuario autenticado ────────────────────────────────
+  // ── Perfil del usuario
 
   static Future<Map<String, dynamic>?> getMe() async {
     final token = await getAccessToken();
@@ -73,7 +73,7 @@ class ApiService {
     return null;
   }
 
-  // ── Medicamentos ───────────────────────────────────────────────────
+  // ── Medicamentos
 
   static Future<List<dynamic>?> getMedicamentos() async {
     final token = await getAccessToken();
@@ -90,7 +90,7 @@ class ApiService {
     return null;
   }
 
-  // ── Registrar Toma de Medicamento ──────────────────────────────────
+  // ── Toma de Medicamento
 
   static Future<Map<String, dynamic>> registrarToma(int medicamentoId) async {
     final token = await getAccessToken();
@@ -109,7 +109,7 @@ class ApiService {
     }
   }
 
-  // ── Datos del dispositivo ──────────────────────────────────────────
+  // ── Datos del dispositivo
 
   static Future<bool> enviarDatoDispositivo(Map<String, dynamic> datos) async {
     final token = await getAccessToken();
@@ -125,16 +125,14 @@ class ApiService {
     );
     return response.statusCode == 201;
   }
-  // ── Cuidadores: Abuelos a cargo ────────────────────────────────────
+  // ── Cuidadores: Abuelos a cargo
 
   static Future<List<dynamic>?> getAbuelosACargo() async {
     final token = await getAccessToken();
     if (token == null) return null;
 
     final response = await http.get(
-      Uri.parse(
-        '$baseUrl/api/v1/pacientes/',
-      ), // 👈 Acá conectamos con el nuevo path
+      Uri.parse('$baseUrl/api/v1/pacientes/'),
       headers: {'Authorization': 'Bearer $token'},
     );
 
@@ -154,7 +152,6 @@ class ApiService {
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else if (response.statusCode == 404 || response.statusCode == 403) {
-        // Manejar si no hay datos o no tiene permiso
         return null;
       } else {
         throw Exception('Error al cargar dispositivo');
@@ -196,7 +193,7 @@ class ApiService {
     }
   }
 
-  // ── Marcar foto/documento como revisado (lado cuidador) ─────────────
+  // ── Marcar foto/documento como revisado (lado cuidador)
 
   static Future<Map<String, dynamic>?> marcarFotoRevisada(
     int fotoId, {
@@ -218,7 +215,7 @@ class ApiService {
     }
   }
 
-  // ── Eventos del calendario (turnos médicos, etc.) ──────────────────
+  // ── Eventos del calendario (turnos médicos, etc.)
 
   static Future<List<dynamic>> getEventos() async {
     final url = Uri.parse('$baseUrl/api/v1/eventos/');
@@ -234,7 +231,7 @@ class ApiService {
     }
   }
 
-  // ── Notificaciones (campanita) ───────────────────────────────────────
+  // ── Notificaciones
 
   static Future<List<dynamic>> getNotificaciones() async {
     final url = Uri.parse('$baseUrl/api/v1/notificaciones/');
@@ -260,7 +257,7 @@ class ApiService {
     }
   }
 
-  // ── Chat (mensajería abuelo ↔ cuidador) ─────────────────────────────
+  // ── Chat (mensajería abuelo - cuidador)
 
   static Future<List<dynamic>> getMensajes(int otroId) async {
     final url = Uri.parse('$baseUrl/api/v1/mensajes/$otroId/');
@@ -317,11 +314,11 @@ class ApiService {
 
     return headers;
   }
-  // ── Subir foto/documento ───────────────────────────────────────────
+  // ── Subir foto/documento
 
   static Future<Map<String, dynamic>> subirFoto({
     required File imagen,
-    required String tipo, // 'medicion' | 'receta' | 'indicacion' | 'otro'
+    required String tipo,
     String notaPaciente = '',
   }) async {
     final token = await getAccessToken();
@@ -359,7 +356,7 @@ class ApiService {
     }
   }
 
-  // ── Extraer dato de foto (Carga de medición) ──────────────────────────
+  // ── Extraer dato de foto
   static Future<Map<String, dynamic>> extraerDatoMedicion(
     int fotoId,
     String tipo,
@@ -390,7 +387,6 @@ class ApiService {
     }
   }
 
-  // ── Historial de Mediciones (Para Gráficos) ─────────────────────────
   static Future<List<dynamic>> getHistorialMediciones(int pacienteId) async {
     final url = Uri.parse(
       '$baseUrl/api/v1/pacientes/$pacienteId/historial-mediciones/',

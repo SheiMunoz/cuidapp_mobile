@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
-import 'package:cuidapp_mobile/widgets/cuidapp_bar.dart';
 import 'package:cuidapp_mobile/services/api_service.dart';
 import 'abuelo_medicamento.dart';
 import 'login.dart';
@@ -24,7 +22,7 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
     _cargarDatosPerfil();
   }
 
-  // ── Llamada a la API ───────────────────────────────────────────────
+  // ── Llamo a la API
   Future<void> _cargarDatosPerfil() async {
     final me = await ApiService.getMe();
     if (mounted) {
@@ -35,7 +33,7 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
     }
   }
 
-  // ── Cerrar sesión ──────────────────────────────────────────────────
+  // ── Cerrar sesión (escondido para que el abuelo no toque sin querer)
   Future<void> _cerrarSesion() async {
     final confirmar = await showDialog<bool>(
       context: context,
@@ -94,7 +92,7 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
   }
 
   Widget _construirPerfil() {
-    // Extraemos datos con valores por defecto por si vienen nulos
+    // Datos con valores por defecto
     final obraSocial = _perfil?['obra_social']?.toString().isNotEmpty == true
         ? _perfil!['obra_social']
         : 'No registrada';
@@ -112,7 +110,7 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
     final requiereGlucosa = _perfil?['requiere_control_glucosa'] == true;
     final requierePeso = _perfil?['requiere_control_peso'] == true;
 
-    // Armamos la lista dinámica de botones
+    // Lista dinámica de botones
     List<Widget> botonesControl = [];
     if (requierePresion)
       botonesControl.add(
@@ -174,7 +172,6 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
             ),
             const SizedBox(height: 8),
             Text(
-              // 👈 Nueva fila de Grupo Sanguíneo
               'Grupo Sanguíneo: $grupoSanguineo',
               textAlign: TextAlign.center,
               style: const TextStyle(
@@ -230,7 +227,7 @@ class _AbueloPerfilState extends State<AbueloPerfil> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children:
-                            botonesControl, // 👈 Solo dibuja los que necesita
+                            botonesControl, // Solo las mediciones que necesita
                       ),
                     ],
                   ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
-import 'package:fl_chart/fl_chart.dart';
 
 class AbueloDetalle extends StatefulWidget {
   final int pacienteId;
@@ -24,7 +23,6 @@ class _AbueloDetalleState extends State<AbueloDetalle> {
   Map<String, dynamic>? _dispositivo;
   List<dynamic> _fotos = [];
   List<dynamic> _medicamentos = [];
-  List<dynamic> _historialMediciones = [];
   bool _cargando = true;
 
   @override
@@ -48,7 +46,6 @@ class _AbueloDetalleState extends State<AbueloDetalle> {
       _dispositivo = resultados[0] as Map<String, dynamic>?;
       _fotos = (resultados[1] as List<dynamic>?) ?? [];
       _medicamentos = (resultados[2] as List<dynamic>?) ?? [];
-      _historialMediciones = (resultados[3] as List<dynamic>?) ?? [];
       _cargando = false;
     });
   }
@@ -230,12 +227,12 @@ class _AbueloDetalleState extends State<AbueloDetalle> {
     final perfil = widget.perfil;
     if (perfil == null) return const SizedBox.shrink();
 
-    // Chequeamos qué mediciones requiere
+    // Filtramos qué mediciones requiere
     final requierePresion = perfil['requiere_control_presion'] == true;
     final requiereGlucosa = perfil['requiere_control_glucosa'] == true;
     final requierePeso = perfil['requiere_control_peso'] == true;
 
-    // Armamos la lista dinámica de botones
+    // Ponemos los botones correspondientes
     List<Widget> botonesControl = [];
     if (requierePresion) {
       botonesControl.add(
@@ -629,7 +626,6 @@ class _AbueloDetalleState extends State<AbueloDetalle> {
   Widget _buildSeccionFotos() {
     final pendientes = _fotos.where((f) => f['procesada'] != true).toList();
 
-    // Agrupamos por tipo, como las "carpetas" de mediciones/recetas/indicaciones en Django
     final Map<String, List<dynamic>> porTipo = {};
     for (final f in _fotos) {
       final tipo = (f['tipo'] ?? 'otro').toString();
@@ -723,13 +719,13 @@ class _AbueloDetalleState extends State<AbueloDetalle> {
   }
 
   Future<void> _mostrarDialogoExtraerDato(Map<String, dynamic> foto) async {
-    // 1. Revisamos la configuración del abuelo desde su perfil
+    // 1. Revisamos el perfil del abuelo
     final perfil = widget.perfil;
     final requierePresion = perfil?['requiere_control_presion'] == true;
     final requiereGlucosa = perfil?['requiere_control_glucosa'] == true;
     final requierePeso = perfil?['requiere_control_peso'] == true;
 
-    // 2. Armamos la lista de opciones dinámicamente
+    // 2. POnemos solo lo necesario en el dropdown
     List<DropdownMenuItem<String>> opcionesMedicion = [];
 
     if (requierePresion) {
@@ -751,8 +747,6 @@ class _AbueloDetalleState extends State<AbueloDetalle> {
       );
     }
 
-    // Un "salvavidas": si el abuelo no tiene controles asignados pero el
-    // cuidador quiere cargar un dato igual, mostramos todas por defecto.
     if (opcionesMedicion.isEmpty) {
       opcionesMedicion = const [
         DropdownMenuItem(value: 'presion', child: Text('Presión Arterial')),
@@ -761,7 +755,6 @@ class _AbueloDetalleState extends State<AbueloDetalle> {
       ];
     }
 
-    // 3. Asignamos como valor inicial la primera opción de la lista
     final tipoController = TextEditingController(
       text: opcionesMedicion.first.value,
     );
@@ -780,7 +773,6 @@ class _AbueloDetalleState extends State<AbueloDetalle> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 4. Conectamos la lista dinámica al Dropdown
                   DropdownButtonFormField<String>(
                     value: tipoController.text,
                     items: opcionesMedicion,

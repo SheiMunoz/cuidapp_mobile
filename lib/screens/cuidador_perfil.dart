@@ -18,7 +18,7 @@ class _CuidadorPerfilState extends State<CuidadorPerfil> {
     _futurePerfil = ApiService.getMe();
   }
 
-  // ── Cerrar sesión ──────────────────────────────────────────────────
+  // ── Cerrar sesión
   Future<void> _cerrarSesion() async {
     final confirmar = await showDialog<bool>(
       context: context,
@@ -51,10 +51,8 @@ class _CuidadorPerfilState extends State<CuidadorPerfil> {
   }
 
   String _fullName(Map<String, dynamic> data) {
-    // Apuntamos directamente al nodo 'perfil' que manda Django
     final perfilNode = (data['perfil'] is Map) ? data['perfil'] : data;
 
-    // Buscamos first_name y last_name exactamente como se llaman en Django
     final firstName = perfilNode['first_name'] ?? '';
     final lastName = perfilNode['last_name'] ?? '';
     final name = '${firstName.toString().trim()} ${lastName.toString().trim()}'
@@ -66,14 +64,9 @@ class _CuidadorPerfilState extends State<CuidadorPerfil> {
   }
 
   Widget _buildDatosList(Map<String, dynamic> data) {
-    // Apuntamos directamente al nodo 'perfil'
     final perfilNode = (data['perfil'] is Map) ? data['perfil'] : data;
-
-    // Extraemos el email y el telefono del lugar correcto
     final email = (perfilNode['email'] ?? '').toString();
     final telefono = (perfilNode['telefono'] ?? '').toString();
-
-    // Dejamos dirección por si en algún momento lo sumás a tu modelo
     final direccion = (perfilNode['direccion'] ?? '').toString();
 
     List<Widget> items = [];
@@ -101,7 +94,6 @@ class _CuidadorPerfilState extends State<CuidadorPerfil> {
     );
   }
 
-  // Plantilla visual para cada dato (Ícono + Título + Valor)
   Widget _itemDato(IconData icono, String titulo, String valor) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
@@ -215,7 +207,6 @@ class _CuidadorPerfilState extends State<CuidadorPerfil> {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        // Llamamos a la nueva función que arma la lista de datos
                         _buildDatosList(perfil),
                       ],
                     ),

@@ -35,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // Traemos el perfil para saber el rol
+    // Chequeamos el rol
     final me = await ApiService.getMe();
 
     if (!mounted) return;

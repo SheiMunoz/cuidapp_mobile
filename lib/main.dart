@@ -3,6 +3,7 @@ import 'screens/login.dart';
 import 'screens/abuelo_home.dart';
 import 'screens/cuidador_home.dart';
 import 'services/api_service.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,11 +14,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'CuidApp',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(useMaterial3: true),
-      home: const AuthCheck(),
+    return ScreenUtilInit(
+      designSize: const Size(390, 844),
+      minTextAdapt: true, // Evita que el texto sea demasiado pequeño
+      splitScreenMode: true,
+      builder: (context, child) {
+        return MaterialApp(
+          title: 'CuidApp',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(useMaterial3: true),
+          home: const AuthCheck(),
+        );
+      },
     );
   }
 }

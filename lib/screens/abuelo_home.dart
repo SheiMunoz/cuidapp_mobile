@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'abuelo_perfil.dart';
 import 'abuelo_medicamento.dart';
 import 'package:cuidapp_mobile/services/api_service.dart';
@@ -70,7 +71,8 @@ class _AbueloHomeState extends State<AbueloHome> {
       backgroundColor: const Color.fromARGB(255, 43, 140, 236),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
+          // ✅ Padding responsive
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 30.h),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -83,34 +85,34 @@ class _AbueloHomeState extends State<AbueloHome> {
                   children: [
                     Image.asset(
                       'assets/images/logo.png',
-                      height: 140,
-                      width: 140,
+                      height: 50.sp, // ✅ Logo responsive
+                      width: 50.sp,
                       fit: BoxFit.contain,
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 8.w), // ✅ Espacio responsive
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
+                          Text(
                             'Cuida App',
                             style: TextStyle(
-                              fontSize: 45,
+                              fontSize: 30.sp, // ✅ Texto responsive
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 2.h), // ✅ Espacio responsive
                           Text(
                             'Hola $_nombreAbuelo!',
-                            style: const TextStyle(
-                              fontSize: 35,
+                            style: TextStyle(
+                              fontSize: 24.sp, // ✅ Texto responsive
                               fontWeight: FontWeight.w500,
                               color: Colors.white,
                             ),
-                            // Esto evita que si el nombre es muy largo, rompa la pantalla
                             overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ],
                       ),
@@ -119,9 +121,8 @@ class _AbueloHomeState extends State<AbueloHome> {
                   ],
                 ),
               ),
-              const SizedBox(height: 50),
-
-              // 2. Grid de 2 columnas x 3 filas
+              SizedBox(height: 30.h), // ✅ Espacio responsive
+              // Menú de botones
               Expanded(
                 child: Column(
                   children: [
@@ -145,7 +146,7 @@ class _AbueloHomeState extends State<AbueloHome> {
                               },
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          SizedBox(width: 12.w), // ✅ Espacio responsive
                           Expanded(
                             child: _buildMenuButton(
                               text: 'Subir Imagen',
@@ -166,7 +167,7 @@ class _AbueloHomeState extends State<AbueloHome> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 12.h), // ✅ Espacio responsive
                     // Fila 2
                     Expanded(
                       child: Row(
@@ -188,21 +189,17 @@ class _AbueloHomeState extends State<AbueloHome> {
                               },
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          SizedBox(width: 12.w), // ✅ Espacio responsive
                           Expanded(
                             child: _buildMenuButton(
-                              text:
-                                  'Turnos\nMédicos', // El \n lo pone en dos líneas para que no quede gigante
-                              backgroundColor: const Color(
-                                0xFF009688,
-                              ), // Verde teal
+                              text: 'Turnos\nMédicos',
+                              backgroundColor: const Color(0xFF009688),
                               textColor: Colors.white,
                               iconPath: 'assets/images/buttons/calendario.png',
                               onPressed: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    // ¡Llamamos a la pantalla nueva!
                                     builder: (context) =>
                                         const TurnosAbueloScreen(),
                                   ),
@@ -213,8 +210,8 @@ class _AbueloHomeState extends State<AbueloHome> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    // Fila 3
+                    SizedBox(height: 12.h), // ✅ Espacio responsive
+                    // Fila 3 - Botón de emergencia
                     Expanded(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -250,9 +247,11 @@ class _AbueloHomeState extends State<AbueloHome> {
       style: ElevatedButton.styleFrom(
         backgroundColor: backgroundColor,
         foregroundColor: textColor,
-        minimumSize: const Size(double.infinity, 68),
-        padding: const EdgeInsets.symmetric(vertical: 22),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        minimumSize: Size(double.infinity, 60.h), // ✅ Alto responsive
+        padding: EdgeInsets.symmetric(vertical: 14.h), // ✅ Padding responsive
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r), // ✅ Radio responsive
+        ),
         elevation: 2,
       ),
       onPressed: () {
@@ -262,17 +261,23 @@ class _AbueloHomeState extends State<AbueloHome> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image.asset(iconPath, height: 90, width: 90),
-          const SizedBox(height: 6),
+          Image.asset(
+            iconPath,
+            height: 40.sp, // ✅ Icono responsive
+            width: 40.sp,
+          ),
+          SizedBox(height: 6.h), // ✅ Espacio responsive
           Text(
             text,
             style: TextStyle(
-              fontSize: 28,
+              fontSize: 20.sp, // ✅ Texto responsive
               fontWeight: FontWeight.w600,
               color: textColor,
-              letterSpacing: 0.5,
+              letterSpacing: 0.3,
             ),
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -287,28 +292,36 @@ class _AbueloHomeState extends State<AbueloHome> {
     required VoidCallback onPressed,
   }) {
     return SizedBox(
-      height: 400,
-      width: 400,
+      height: 150.sp, // ✅ Tamaño responsive
+      width: 150.sp, // ✅ Tamaño responsive
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           shape: const CircleBorder(),
           elevation: 4,
+          padding: EdgeInsets.all(20.sp), // ✅ Padding responsive
         ),
         onPressed: onPressed,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(iconPath, height: 90, width: 90),
-            const SizedBox(height: 8),
-            Text(
-              text,
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.w600,
-                color: textColor,
+            Image.asset(
+              iconPath,
+              height: 40.sp, // ✅ Icono responsive
+              width: 40.sp,
+            ),
+            SizedBox(height: 8.h), // ✅ Espacio responsive
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontSize: 22.sp, // ✅ Texto responsive
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
             ),
           ],
         ),

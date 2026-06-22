@@ -26,9 +26,7 @@ class _CampanitaNotificacionesState extends State<CampanitaNotificaciones> {
       final notificaciones = await ApiService.getNotificaciones();
       if (!mounted) return;
       setState(() => _cantidad = notificaciones.length);
-    } catch (_) {
-      // Si falla, simplemente no mostramos el contador.
-    }
+    } catch (_) {}
   }
 
   Future<void> _abrirNotificaciones() async {
@@ -36,7 +34,7 @@ class _CampanitaNotificacionesState extends State<CampanitaNotificaciones> {
       context,
       MaterialPageRoute(builder: (_) => const NotificacionesScreen()),
     );
-    // Al volver, ya se marcaron como leídas; refrescamos el contador.
+    // Refrescamos el contador.
     _cargarCantidad();
   }
 
@@ -46,12 +44,12 @@ class _CampanitaNotificacionesState extends State<CampanitaNotificaciones> {
       clipBehavior: Clip.none,
       children: [
         IconButton(
-          icon: Icon(Icons.notifications, color: widget.color, size: 30),
+          icon: Icon(Icons.notifications, color: widget.color, size: 20),
           onPressed: _abrirNotificaciones,
         ),
         if (_cantidad > 0)
           Positioned(
-            right: 10,
+            right: 12,
             top: 6,
             child: Container(
               padding: const EdgeInsets.all(4),
